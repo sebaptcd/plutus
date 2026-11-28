@@ -357,9 +357,9 @@ function renderHeroAlloc(st) {
   syncHeroAllocHeight();
 }
 
-// The legend never stretches its box: capped at six rows on desktop / three
-// rows on phones (the seventh / fourth asset scrolls, never earlier) and
-// never taller than the left amount block, so the hero cannot expand no matter how many assets exist.
+// The legend never stretches its box: capped at six rows on every screen
+// (the seventh asset scrolls, never earlier) and never taller than the left
+// amount block, so the hero cannot expand no matter how many assets exist.
 // Re-synced on render + viewport and font changes because the amount scales
 // with the viewport.
 function syncHeroAllocHeight() {
@@ -374,23 +374,24 @@ function syncHeroAllocHeight() {
     if (!(h > 0)) return;
     var cap = h;
     try {
-      var narrow = false;
-      try {
-        if (typeof window !== 'undefined' && window.matchMedia) {
-          narrow = window.matchMedia('(max-width: 720px)').matches;
-        }
-      } catch (eN) {}
       // Measure the rendered rows instead of estimating them from font
       // metrics: an estimate drifts per browser/font (it left six desktop
       // rows a few pixels short, so they scrolled). The cap ends exactly at
       // the last row that must fit, so the next one is what scrolls.
-      var rows = narrow ? 3 : 6;
+      var rows = 6;
       var lis = leg.children;
       if (lis && lis.length > rows) {
         var lr = leg.getBoundingClientRect();
         var lastR = lis[rows - 1].getBoundingClientRect();
         var fit = lastR.bottom - lr.top + (leg.scrollTop || 0) + (leg.clientTop || 0);
         if (fit > 0 && fit < cap) cap = fit;
+      }
+      // Phones stack the legend under the ring, so the room left is what
+      // remains of the amount block below the legend's top, not the whole
+      // block: past that the list scrolls sooner instead of growing the hero.
+      if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
+        var room = main.getBoundingClientRect().bottom - leg.getBoundingClientRect().top + (leg.clientTop || 0);
+        if (room > 0 && room < cap) cap = room;
       }
     } catch (e2) { /* fall back to the measured block height */ }
     leg.style.maxHeight = cap + 'px';
